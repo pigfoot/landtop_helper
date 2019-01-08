@@ -1,0 +1,9 @@
+{
+  "@@last_modified": "2019-01-07T19:42:23.055773",
+  "@@locale": "zh_TW",
+  "appName": "地標網通",
+  "@appName": {
+    "type": "text",
+    "placeholders": {}
+  }
+}

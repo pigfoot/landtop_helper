@@ -28,6 +28,10 @@
 .pub/
 build/
 
+# Flutter l10n related
+lib/l10n/messages_*.dart
+lib/l10n/intl_messages.arb
+
 # Android related
 **/android/**/gradle-wrapper.jar
 **/android/.gradle

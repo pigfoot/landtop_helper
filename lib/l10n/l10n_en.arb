@@ -1,0 +1,9 @@
+{
+  "@@last_modified": "2019-01-07T19:42:23.055773",
+  "@@locale": "en",
+  "appName": "Landtop",
+  "@appName": {
+    "type": "text",
+    "placeholders": {}
+  }
+}
