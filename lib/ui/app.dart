@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -50,6 +51,7 @@ class _MyAppState extends State<MyApp> {
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
         primarySwatch: Colors.blue,
+        brightness: Brightness.dark,
       ),
       home: MyHomePage(),
     );
@@ -73,50 +75,167 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  List<String> _list;
+  static final GlobalKey<ScaffoldState> scaffoldKey =
+      new GlobalKey<ScaffoldState>();
+
+  TextEditingController _searchQuery;
+  bool _isSearching = false;
+  String searchQuery = "Search query";
+
   @override
-  Widget build(BuildContext context) {
-    var card = SizedBox(
-      height: 210.0,
-      child: Card(
-        child: Column(
-          children: [
-            ListTile(
-              title: Text('1625 Main Street',
-                  style: TextStyle(fontWeight: FontWeight.w500)),
-              subtitle: Text('My City, CA 99984'),
-              leading: Icon(
-                Icons.restaurant_menu,
-                color: Colors.blue[500],
-              ),
-            ),
-            Divider(),
-            ListTile(
-              title: Text('(408) 555-1212',
-                  style: TextStyle(fontWeight: FontWeight.w500)),
-              leading: Icon(
-                Icons.contact_phone,
-                color: Colors.blue[500],
-              ),
-            ),
-            ListTile(
-              title: Text('costa@example.com'),
-              leading: Icon(
-                Icons.contact_mail,
-                color: Colors.blue[500],
-              ),
-            ),
+  void initState() {
+    super.initState();
+    _searchQuery = new TextEditingController();
+    init();
+  }
+
+  void init() {
+    _list = List();
+    _list.add("Google");
+    _list.add("IOS");
+    _list.add("Andorid");
+    _list.add("Dart");
+    _list.add("Flutter");
+    _list.add("Python");
+    _list.add("React");
+    _list.add("Xamarin");
+    _list.add("Kotlin");
+    _list.add("Java");
+    _list.add("RxAndroid");
+  }
+
+  void _startSearch() {
+    print("open search box");
+    ModalRoute.of(context)
+        .addLocalHistoryEntry(new LocalHistoryEntry(onRemove: _stopSearching));
+
+    setState(() {
+      _isSearching = true;
+    });
+  }
+
+  void _stopSearching() {
+    _clearSearchQuery();
+
+    setState(() {
+      _isSearching = false;
+    });
+  }
+
+  void _clearSearchQuery() {
+    print("close search box");
+    setState(() {
+      _searchQuery.clear();
+      updateSearchQuery("Search query");
+    });
+  }
+
+  Widget _buildTitle(BuildContext context) {
+    var horizontalTitleAlignment =
+        Platform.isIOS ? CrossAxisAlignment.center : CrossAxisAlignment.start;
+
+    return new InkWell(
+      onTap: () => scaffoldKey.currentState.openDrawer(),
+      child: new Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        child: new Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: horizontalTitleAlignment,
+          children: <Widget>[
+            Text(L10N.of(context).appName),
           ],
         ),
       ),
     );
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(L10N.of(context).appName),
+  Widget _buildSearchField(BuildContext context) {
+    return new TextField(
+      controller: _searchQuery,
+      autofocus: true,
+      decoration: InputDecoration(
+        hintText: L10N.of(context).appSearchHint,
+        border: InputBorder.none,
+        hintStyle: const TextStyle(color: Colors.white30),
       ),
-      body: Center(
-        child: card,
+      style: const TextStyle(color: Colors.white, fontSize: 16.0),
+      onChanged: updateSearchQuery,
+    );
+  }
+
+  void updateSearchQuery(String newQuery) {
+    setState(() {
+      searchQuery = newQuery;
+    });
+    print("search query " + newQuery);
+  }
+
+  List<Widget> _buildActions() {
+    if (_isSearching) {
+      return <Widget>[
+        new IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: () {
+            if (_searchQuery == null || _searchQuery.text.isEmpty) {
+              Navigator.pop(context);
+              return;
+            }
+            _clearSearchQuery();
+          },
+        ),
+      ];
+    }
+
+    return <Widget>[
+      new IconButton(
+        icon: const Icon(Icons.search),
+        onPressed: _startSearch,
+      ),
+    ];
+  }
+
+  List<ChildItem> _buildList() {
+    return _list.map((contact) => new ChildItem(contact)).toList();
+  }
+
+  List<ChildItem> _buildSearchList() {
+    if (_searchQuery.text.isEmpty) {
+      return _list.map((contact) => new ChildItem(contact)).toList();
+    } else {
+      List<String> _searchList = List();
+      for (int i = 0; i < _list.length; i++) {
+        String name = _list.elementAt(i);
+        if (name.toLowerCase().contains(_searchQuery.text.toLowerCase())) {
+          _searchList.add(name);
+        }
+      }
+      return _searchList.map((contact) => new ChildItem(contact)).toList();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: scaffoldKey,
+      appBar: new AppBar(
+        leading: _isSearching ? const BackButton() : null,
+        title: _isSearching ? _buildSearchField(context) : _buildTitle(context),
+        actions: _buildActions(),
+      ),
+      body: new ListView(
+        padding: new EdgeInsets.symmetric(vertical: 8.0),
+        children: _isSearching ? _buildSearchList() : _buildList(),
       ),
     );
+  }
+}
+
+class ChildItem extends StatelessWidget {
+  final String name;
+  ChildItem(this.name);
+  @override
+  Widget build(BuildContext context) {
+    return new ListTile(title: new Text(this.name));
   }
 }

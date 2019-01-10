@@ -21,5 +21,6 @@ class L10N {
 
   static final L10N instance = new L10N();
 
-  String get appName => Intl.message("Landtop", name: "appName");
+  String get appName => Intl.message("Landtop Helper", name: "appName");
+  String get appSearchHint => Intl.message("Search...", name: "appSearchHint");
 }

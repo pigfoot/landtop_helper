@@ -5,5 +5,10 @@
   "@appName": {
     "type": "text",
     "placeholders": {}
+  },
+  "appSearchHint": "搜尋...",
+  "@appSearchHint": {
+    "type": "text",
+    "placeholders": {}
   }
 }
