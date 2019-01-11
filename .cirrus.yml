@@ -2,10 +2,6 @@ container:
   image: cirrusci/flutter:latest
 
 preparation_task:
-  env:
-    CIRRUS_WORKING_DIR: "/tmp/flutter sdk"
-    PATH: "${CIRRUS_WORKING_DIR}/bin:$${CIRRUS_WORKING_DIR}/bin/cache/dart-sdk/bin:${PATH}"
-    ANDROID_SDK_ROOT: "/opt/android_sdk"
   setup_script: |
     echo "SDK directory is: $PWD"
     flutter --version
