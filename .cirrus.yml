@@ -15,7 +15,7 @@ preparation_task:
 
 test_task:
   depends_on:
-    - test
+    - preparation
 
   pub_cache:
     folder: ${HOME}/.pub-cache
