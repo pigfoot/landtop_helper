@@ -15,14 +15,14 @@ preparation_task:
 
 test_task:
   depends_on:
-    - preparation
+    - test
 
   pub_cache:
     folder: ${HOME}/.pub-cache
     fingerprint_script: cat pubspec.lock
     populate_script: flutter packages get
 
-    test_script: flutter test
+  test_script: flutter test
 
 android_deploy_task:
   depends_on:
