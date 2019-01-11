@@ -20,7 +20,7 @@ test_task:
 
   pub_cache:
     folder: ${HOME}/.pub-cache
-    fingerprint_script: cat pubspec.lock
+    fingerprint_script: echo $OS; grep -r --include=pubspec.yaml 'PUBSPEC CHECKSUM' "$CIRRUS_WORKING_DIR"
     populate_script: flutter packages get
 
   test_script: flutter test
