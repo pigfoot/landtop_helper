@@ -19,8 +19,6 @@ test_task:
     fingerprint_script: echo $OS; ls
     populate_script: flutter packages get
 
-  test_script: flutter test
-
 android_deploy_task:
   depends_on:
     - test
