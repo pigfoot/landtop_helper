@@ -3,7 +3,7 @@ container:
 
 preparation_task:
   setup_script: |
-    echo "SDK directory is: $PWD"
+    echo "SDK directory is: ${PWD}"
     flutter --version
     # disable analytics on the bots and download Flutter dependencies
     flutter config --no-analytics
@@ -16,7 +16,7 @@ test_task:
 
   pub_cache:
     folder: ${HOME}/.pub-cache
-    fingerprint_script: echo $OS; cat pubspec.lock
+    fingerprint_script: echo $OS; ls
     populate_script: flutter packages get
 
   test_script: flutter test
