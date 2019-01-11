@@ -1,0 +1,130 @@
+container:
+  image: cirrusci/flutter:latest
+
+test_task:
+  pub_cache:
+    folder: ${HOME}/.pub-cache
+    fingerprint_script: cat pubspec.lock
+    populate_script: flutter packages get
+
+    test_script: flutter test
+
+android_deploy_task:
+  depends_on:
+    - test
+  only_if: ${BRANCH} == "master"
+
+  env:
+    PUBLISH_KEY_PASS_PATH: ""
+    PUBLISH_KEY_JKS_BASE64: ENCRYPTED[]
+    KEYPASS: ENCRYPTED[]
+    SERVICE_ACCOUNT_JSON: ENCRYPTED[]
+    GOOGLE_SERVICES_JSON: ENCRYPTED[]
+
+  pub_cache:
+    folder: ${HOME}/.pub-cache
+    fingerprint_script: cat pubspec.lock
+    populate_script: flutter packages get
+
+  vendor_cache:
+    folder: android/vendor/bundle
+    fingerprint_script: cat android/Gemfile.lock
+    populate_script: cd android/; bundle install --path vendor/bundle
+
+  # cache everything for simplicity
+  gradle_cache:
+    folder: ${HOME}/.gradle
+
+  create_local_properties_script:
+    - cd android/
+    - echo 'flutter.sdk=/home/cirrus/sdks/flutter' > local.properties
+  create_key_properties_script:
+    - cd android/
+    - echo ${PUBLISH_KEY_JKS_BASE64} | base64 --decode > ${PUBLISH_KEY_PASS_PATH}
+    - printf "storePassword=${KEYPASS}\nkeyPassword=${KEYPASS}\nkeyAlias=key\nstoreFile=${PUBLISH_KEY_PASS_PATH}" > key.properties
+    - echo ${SERVICE_ACCOUNT_JSON} > /tmp/service_account.json
+  create_google_services_json_script:
+    - cd android/app
+    - echo ${GOOGLE_SERVICES_JSON} | base64 --decode > google-services.json
+  set_version_script:
+    - cd android/
+    - U=$(expr $(date +%s) / 10) # increase by 1 in each 10 seconds
+    - echo "versionCode=${U}" >> version.properties
+    - echo "versionName=$(cat ../version.txt)" >> version.properties
+  deploy_script:
+    - flutter build apk --release
+    - cd android/
+    - mv _fastlane fastlane
+    - bundle install --path vendor/bundle
+    - bundle exec fastlane beta
+
+ios_deploy_task:
+  depends_on:
+    - test
+  only_if: ${BRANCH} == "master"
+
+  osx_instance:
+    image: high-sierra-xcode-10.0
+
+  env:
+    CERTIFICATIONS_REPO_URL: ENCRYPTED[]
+    ID_RSA: ENCRYPTED[]
+    FASTLANE_USER: ENCRYPTED[]
+    FASTLANE_PASSWORD: ENCRYPTED[]
+    ITC_TEAM_ID: ENCRYPTED[]
+    TEAM_ID: ENCRYPTED[]
+    KNOWN_HOSTS: ENCRYPTED[]
+    MATCH_PASSWORD: ENCRYPTED[]
+    GOOGLE_SERVICES_PLIST: ENCRYPTED[]
+    LC_ALL: en_US.UTF-8
+    LANG: en_US.UTF-8
+    FLUTTER_SDK_URL: "https://storage.googleapis.com/flutter_infra/releases/stable/macos/flutter_macos_v1.0.0-stable.zip"
+    FLUTTER_SDK_PATH: "/tmp/_flutter_sdk"
+    PATH: "${FLUTTER_SDK_PATH}/bin:${PATH}"
+    MATCH_KEYCHAIN_NAME: "keychain"
+    MATCH_KEYCHAIN_PASSWORD: "hoge"
+
+  # no fingerprint_script
+  flutter_sdk_cache:
+    folder: ${FLUTTER_SDK_PATH}
+    fingerprint_script: echo ${FLUTTER_SDK_URL}
+    populate_script:
+      - curl -o /tmp/flutter-sdk.zip ${FLUTTER_SDK_URL}
+      - unzip -qq /tmp/flutter-sdk.zip -d /tmp/
+      - mv /tmp/flutter ${FLUTTER_SDK_PATH}
+  vendor_cache:
+    folder: ios/vendor/bundle
+    fingerprint_script: cat ios/Gemfile.lock
+    populate_script: cd ios/; bundle install --path vendor/bundle
+
+  create_fastlane_settings_script:
+    - cd ios/
+    - mv _fastlane fastlane
+    - cd fastlane
+    - printf "apple_id(\"${FASTLANE_USER}\")\nitc_team_id(\"${ITC_TEAM_ID}\")\nteam_id(\"${TEAM_ID}\")" >> Appfile
+    - printf "git_url(\"${CERTIFICATIONS_REPO_URL}\")\ntype(\"appstore\")" > Matchfile
+  change_ssh_config_for_match_script:
+    - mkdir -p ~/.ssh
+    - cd ~/.ssh
+    - echo ${ID_RSA} | base64 --decode > id_rsa
+    - chmod 600 id_rsa
+    - echo ${KNOWN_HOSTS} > known_hosts
+    - eval `ssh-agent -s`
+    - ssh-add ./id_rsa
+  create_keychain_script:
+    - cd ios/
+    - bundle install --path vendor/bundle
+    - bundle exec fastlane create_temporary_keychain
+  fastlane_match_script:
+    - cd ios/
+    - bundle install --path vendor/bundle
+    - bundle exec fastlane match appstore --readonly
+  create_google_services_plist_script:
+    - cd ios/Runner
+    - echo ${GOOGLE_SERVICES_PLIST} | base64 --decode > GoogleService-Info.plist
+  deploy_script:
+    - export CFBundleVersion=`date +%s` # for build code
+    - export CFBundleShortVersionString=`cat ./version.txt` # for version string
+    - flutter build ios --release --no-codesign
+    - cd ios/
+    - bundle exec fastlane beta
