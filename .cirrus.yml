@@ -1,7 +1,22 @@
 container:
   image: cirrusci/flutter:latest
 
+preparation_task:
+  env:
+    CIRRUS_WORKING_DIR: "/tmp/flutter sdk"
+    PATH: "${CIRRUS_WORKING_DIR}/bin:$${CIRRUS_WORKING_DIR}/bin/cache/dart-sdk/bin:${PATH}"
+  setup_script: |
+    echo "SDK directory is: $PWD"
+    ./bin/flutter --version
+    # disable analytics on the bots and download Flutter dependencies
+    ./bin/flutter config --no-analytics
+    # run pub get in all the repo packages
+    ./bin/flutter update-packages
+
 test_task:
+  depends_on:
+    - preparation
+
   pub_cache:
     folder: ${HOME}/.pub-cache
     fingerprint_script: cat pubspec.lock
