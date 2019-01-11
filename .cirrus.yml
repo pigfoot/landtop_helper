@@ -5,13 +5,14 @@ preparation_task:
   env:
     CIRRUS_WORKING_DIR: "/tmp/flutter sdk"
     PATH: "${CIRRUS_WORKING_DIR}/bin:$${CIRRUS_WORKING_DIR}/bin/cache/dart-sdk/bin:${PATH}"
+    ANDROID_SDK_ROOT: "/opt/android_sdk"
   setup_script: |
     echo "SDK directory is: $PWD"
-    ./bin/flutter --version
+    flutter --version
     # disable analytics on the bots and download Flutter dependencies
-    ./bin/flutter config --no-analytics
+    flutter config --no-analytics
     # run pub get in all the repo packages
-    ./bin/flutter update-packages
+    flutter update-packages
 
 test_task:
   depends_on:
